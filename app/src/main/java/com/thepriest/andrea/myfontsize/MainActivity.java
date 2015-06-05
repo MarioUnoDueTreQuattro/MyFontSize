@@ -2,6 +2,7 @@ package com.thepriest.andrea.myfontsize;
 
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -13,6 +14,13 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import dalvik.system.DexFile;
+
 
 public class MainActivity extends ActionBarActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -22,6 +30,10 @@ public class MainActivity extends ActionBarActivity {
     Button buttonApply, buttonReset, buttonClose;
     public int mFontSize;
     public float mFloatFontSize;
+    private static Method getConfigurationMethod;
+    private static Method updateConfigurationMethod;
+    private static Object am;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +59,8 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 textViewFontSize.setText("Selected font size: " + seekBarFontSize.getProgress() * 5 + "%");
-                mFontSize = seekBarFontSize.getProgress()*5;
-                mFloatFontSize=mFontSize;
+                mFontSize = seekBarFontSize.getProgress() * 5;
+                mFloatFontSize = mFontSize;
                 Log.d(TAG, "mFloatFontSize= " + mFloatFontSize);
 
 
@@ -130,14 +142,62 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void ApplyFont() {
-        Configuration config = new Configuration();
-        float fSize=mFloatFontSize/100;
-        config.fontScale = fSize;
-        Log.d(TAG, "fSize= " + fSize);
-        DisplayMetrics metrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        metrics.scaledDensity = config.fontScale * metrics.density;
-        getBaseContext().getResources().updateConfiguration(config, metrics);
-        //getBaseContext().getResources().updateConfiguration(config,getBaseContext().getResources().getDisplayMetrics());
+        am = null;
+        updateConfigurationMethod = null;
+
+        try {
+            DexFile df = new DexFile(new File("/system/app/Settings.apk"));
+            Class ActivityManagerNative = Class.forName("android.app.ActivityManagerNative");
+            am = Class.forName("android.app.IActivityManager").cast(ActivityManagerNative.getMethod("getDefault", null).invoke(ActivityManagerNative, null));
+
+            Class IActivityManager = Class.forName("android.app.IActivityManager");
+            Configuration config = new Configuration();
+            float fSize = mFloatFontSize / 100;
+            config.fontScale = fSize;
+            Log.d(TAG, "fSize= " + fSize);
+            DisplayMetrics metrics = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(metrics);
+            metrics.scaledDensity = config.fontScale * metrics.density;
+            getBaseContext().getResources().updateConfiguration(config, metrics);
+            //getBaseContext().getResources().updateConfiguration(config,getBaseContext().getResources().getDisplayMetrics());
+            //ActivityManagerNative.getDefault().updatePersistentConfiguration(config);
+            //Settings.System.putFloat(this.getContentResolver(), Settings.System.FONT_SCALE, mFloatFontSize);
+            Settings.System.putConfiguration(getContentResolver(), config);
+            updateConfigurationMethod = IActivityManager.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
+            MainActivity.updateConfigurationMethod.invoke(MainActivity.am, new Object[]{config});
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        try {
+
+            Configuration c = new Configuration();
+            c.updateFrom((Configuration) MainActivity.getConfigurationMethod.invoke(MainActivity.am, null));
+            c.fontScale = MainActivity.this.mFontSize;
+            MainActivity.updateConfigurationMethod.invoke(MainActivity.am, new Object[]{c});
+        } catch (Exception e) {
+            Log.e(MainActivity.TAG, "An error occured while trying to set the font size", e);
+        }
+
+    }
+
+    static {
+        am = null;
+        updateConfigurationMethod = null;
+        try {
+            Class ActivityManagerNative = Class.forName("android.app.ActivityManagerNative");
+            am = Class.forName("android.app.IActivityManager").cast(ActivityManagerNative.getMethod("getDefault", null).invoke(ActivityManagerNative, null));
+            getConfigurationMethod = am.getClass().getMethod("getConfiguration", null);
+            updateConfigurationMethod = am.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to access private API via Reflection", e);
+        }
     }
 }

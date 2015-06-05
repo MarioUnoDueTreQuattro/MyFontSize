@@ -1,0 +1,10 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Dialog">
+        <!-- Customize your theme here. -->
+    </style>
+    <style name="MyTextStyle" parent="@style/TextAppearance.AppCompat">
+        <item name="android:textColor">#ffdddddd</item>
+    </style>
+</resources>

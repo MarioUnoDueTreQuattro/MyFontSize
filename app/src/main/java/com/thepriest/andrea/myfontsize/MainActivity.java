@@ -1,7 +1,10 @@
 package com.thepriest.andrea.myfontsize;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,10 +15,13 @@ import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
     RelativeLayout main_layout;
     SeekBar seekBarFontSize;
     TextView textViewFontSize;
     Button buttonApply, buttonReset, buttonClose;
+    public int mFontSize;
+    public float mFloatFontSize;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +47,11 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 textViewFontSize.setText("Selected font size: " + seekBarFontSize.getProgress() * 5 + "%");
+                mFontSize = seekBarFontSize.getProgress()*5;
+                mFloatFontSize=mFontSize;
+                Log.d(TAG, "mFloatFontSize= " + mFloatFontSize);
+
+
             }
 
             /**
@@ -75,9 +86,25 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 textViewFontSize.setText("Selected font size: " + 100 + "%");
-           seekBarFontSize.setProgress(20);
+                seekBarFontSize.setProgress(20);
+                mFontSize = 100;
+                mFloatFontSize = 1.0f;
             }
         });
+        buttonApply.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ApplyFont();
+            }
+        });
+        mFloatFontSize = getResources().getConfiguration().fontScale;
+        Log.d(TAG, "mFloatFontSize= " + mFloatFontSize);
+        seekBarFontSize.setProgress(Math.round(mFloatFontSize * 20));
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override
@@ -100,5 +127,17 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void ApplyFont() {
+        Configuration config = new Configuration();
+        float fSize=mFloatFontSize/100;
+        config.fontScale = fSize;
+        Log.d(TAG, "fSize= " + fSize);
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
+        metrics.scaledDensity = config.fontScale * metrics.density;
+        getBaseContext().getResources().updateConfiguration(config, metrics);
+        //getBaseContext().getResources().updateConfiguration(config,getBaseContext().getResources().getDisplayMetrics());
     }
 }

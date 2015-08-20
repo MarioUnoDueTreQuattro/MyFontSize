@@ -169,7 +169,8 @@ public class MainActivity extends ActionBarActivity {
             Settings.System.putConfiguration(getContentResolver(), config);
             updateConfigurationMethod = IActivityManager.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
             MainActivity.updateConfigurationMethod.invoke(MainActivity.am, new Object[]{config});
-
+            m_ContentResolver = this.getContentResolver();
+setFontScale(fSize);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {

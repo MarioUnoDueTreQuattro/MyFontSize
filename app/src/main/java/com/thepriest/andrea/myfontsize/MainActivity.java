@@ -1,5 +1,6 @@
 package com.thepriest.andrea.myfontsize;
 
+import android.content.ContentResolver;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -33,11 +35,13 @@ public class MainActivity extends ActionBarActivity {
     private static Method getConfigurationMethod;
     private static Method updateConfigurationMethod;
     private static Object am;
+    ContentResolver m_ContentResolver;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        m_ContentResolver = this.getContentResolver();
         setContentView(R.layout.activity_main);
         // main_layout= (RelativeLayout) findViewById(R.id.rel_layout);
         // main_layout.setBackgroundColor(R.color.bright_foreground_material_light);
@@ -53,7 +57,7 @@ public class MainActivity extends ActionBarActivity {
              *
              * @param seekBar  The SeekBar whose progress has changed
              * @param progress The current progress level. This will be in the range 0..max where max
-             *                 was set by {@link ProgressBar#setMax(int)}. (The default value for max is 100.)
+             *                 was set by {@link }. (The default value for max is 100.)
              * @param fromUser True if the progress change was initiated by the user.
              */
             @Override
@@ -109,7 +113,7 @@ public class MainActivity extends ActionBarActivity {
                 ApplyFont();
             }
         });
-        mFloatFontSize = getResources().getConfiguration().fontScale;
+        mFloatFontSize = android.provider.Settings.System.getFloat(m_ContentResolver, android.provider.Settings.System.FONT_SCALE, 1f);
         Log.d(TAG, "mFloatFontSize= " + mFloatFontSize);
         seekBarFontSize.setProgress(Math.round(mFloatFontSize * 20));
     }
@@ -165,6 +169,7 @@ public class MainActivity extends ActionBarActivity {
             Settings.System.putConfiguration(getContentResolver(), config);
             updateConfigurationMethod = IActivityManager.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
             MainActivity.updateConfigurationMethod.invoke(MainActivity.am, new Object[]{config});
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -198,6 +203,36 @@ public class MainActivity extends ActionBarActivity {
             updateConfigurationMethod = am.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
         } catch (Exception e) {
             Log.e(TAG, "Unable to access private API via Reflection", e);
+        }
+    }
+
+    static void setFontScale(float fScale) {
+        try {
+            Method method = Class.forName((String) "android.app.ActivityManagerNative").getDeclaredMethod("getDefault", null);
+            method.setAccessible(true);
+            Object object = method.invoke((Object) null, null);
+            Method method2 = object.getClass().getDeclaredMethod("getConfiguration", null);
+            method2.setAccessible(true);
+            Configuration configuration = (Configuration) method2.invoke(object, null);
+            Field field = configuration.getClass().getDeclaredField("fontScale");
+            field.setAccessible(true);
+            field.set((Object) configuration, (Object) Float.valueOf((float) fScale));
+            Class[] arrclass = new Class[]{Configuration.class};
+            Object[] arrobject = new Object[]{configuration};
+            Method method3 = object.getClass().getDeclaredMethod("updatePersistentConfiguration", arrclass);
+            method3.setAccessible(true);
+            method3.invoke(object, arrobject);
+            return;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
         }
     }
 }

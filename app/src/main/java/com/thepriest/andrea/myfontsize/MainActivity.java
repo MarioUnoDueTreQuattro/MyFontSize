@@ -104,7 +104,9 @@ public class MainActivity extends ActionBarActivity {
                 textViewFontSize.setText("Selected font size: " + 100 + "%");
                 seekBarFontSize.setProgress(20);
                 mFontSize = 100;
-                mFloatFontSize = 1.0f;
+                mFloatFontSize = 100.0f;
+ApplyFont();
+                Log.d(TAG, "mFloatFontSize= " + mFloatFontSize);
             }
         });
         buttonApply.setOnClickListener(new View.OnClickListener() {

@@ -148,7 +148,7 @@ public class MainActivity extends ActionBarActivity {
     public void ApplyFont() {
         am = null;
         updateConfigurationMethod = null;
-
+        float fSize;
         try {
             DexFile df = new DexFile(new File("/system/app/Settings.apk"));
             Class ActivityManagerNative = Class.forName("android.app.ActivityManagerNative");
@@ -156,7 +156,8 @@ public class MainActivity extends ActionBarActivity {
 
             Class IActivityManager = Class.forName("android.app.IActivityManager");
             Configuration config = new Configuration();
-            float fSize = mFloatFontSize / 100;
+            fSize = mFloatFontSize / 100;
+            setFontScale(fSize);
             config.fontScale = fSize;
             Log.d(TAG, "fSize= " + fSize);
             DisplayMetrics metrics = new DisplayMetrics();
@@ -170,7 +171,6 @@ public class MainActivity extends ActionBarActivity {
             updateConfigurationMethod = IActivityManager.getClass().getMethod("updatePersistentConfiguration", new Class[]{Configuration.class});
             MainActivity.updateConfigurationMethod.invoke(MainActivity.am, new Object[]{config});
             m_ContentResolver = this.getContentResolver();
-setFontScale(fSize);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -191,6 +191,8 @@ setFontScale(fSize);
         } catch (Exception e) {
             Log.e(MainActivity.TAG, "An error occured while trying to set the font size", e);
         }
+        fSize = mFloatFontSize / 100;
+        setFontScale(fSize);
 
     }
 

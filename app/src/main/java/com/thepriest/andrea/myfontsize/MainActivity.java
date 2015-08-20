@@ -95,7 +95,8 @@ public class MainActivity extends ActionBarActivity {
         buttonClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.exit(0);
+                finish();
+                //System.exit(0);
             }
         });
         buttonReset.setOnClickListener(new View.OnClickListener() {
